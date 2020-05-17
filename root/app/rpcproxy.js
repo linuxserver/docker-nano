@@ -5,6 +5,7 @@ var config = require('/config/rpc-proxy.json');
 
 http.createServer((req, res) => {
   var body = '';
+  res.setHeader("Access-Control-Allow-Origin", "*");
   req.on('data', function (data) {
     body += data;
     // Only take 1000 bytes should cover all payloads and protect overflows 
