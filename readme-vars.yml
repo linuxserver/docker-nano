@@ -1,0 +1,111 @@
+---
+
+# project information
+project_name: nano
+project_url: "https://nano.org/"
+project_logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Nano_logo.png/640px-Nano_logo.png"
+project_blurb: |
+  [{{ project_name|capitalize }}]({{ project_url }}) is a digital payment protocol designed to be accessible and lightweight, with a focus on removing inefficiencies present in other cryptocurrencies. With ultrafast transactions and zero fees on a secure, green and decentralized network, this makes Nano ideal for everyday transactions.
+project_lsio_github_repo_url: "https://github.com/linuxserver/docker-{{ project_name }}"
+# supported architectures
+available_architectures:
+  - { arch: "{{ arch_x86_64 }}", tag: "amd64-latest"}
+  - { arch: "{{ arch_arm64 }}", tag: "arm64v8-latest"}
+# container parameters
+param_container_name: "{{ project_name }}"
+param_usage_include_vols: true
+param_volumes:
+  - { vol_path: "/config", vol_host_path: "/path/to/data", desc: "Database and Radarr configs" }
+param_usage_include_ports: true
+param_ports:
+  - { external_port: "7075", internal_port: "7075/udp", port_desc: "Nano communication port UDP" }
+  - { external_port: "7075", internal_port: "7075/tcp", port_desc: "Nano communication port TCP" }
+  - { external_port: "7076", internal_port: "3000", port_desc: "RPC interface filtered through a proxy" }
+param_usage_include_env: true
+param_env_vars:
+  - { env_var: "TZ", env_value: "Europe/London", desc: "Specify a timezone to use EG Europe/London"}
+# optional env variables
+opt_param_usage_include_env: true
+opt_param_env_vars:
+  - { env_var: "PEER_HOST", env_value: "localhost", desc: "Default peer host (can be overidden with an array by command line options)"}
+  - { env_var: "LIVE_GENESIS_PUB", env_value: "19D3D919475DEED4696B5D13018151D1AF88B2BD3BCFF048B45031C1F36D1858", desc: "Genesis block public key"}
+  - { env_var: "LIVE_GENESIS_ACCOUNT", env_value: "nano_18gmu6engqhgtjnppqam181o5nfhj4sdtgyhy36dan3jr9spt84rzwmktafc", desc: "Genesis block account"}
+  - { env_var: "LIVE_GENESIS_WORK", env_value: "820cc9d17342799c", desc: "Genesis block proof of work"}
+  - { env_var: "LIVE_GENESIS_SIG", env_value: "012B814F60A97B9C40D066C3C104383C335633D74A0566E0A0C6D1DDA7BBFA4011547AA0374B6B3146F290352E5EC6C81551032583219F8A372C236DD65BA90D", desc: "Genesis block signature"}
+  - { env_var: "CLI_OPTIONS", env_value: "'--config node.receive_minimum = \\\"1000000000000000000000000\\\"'", desc: "Node run command cli args"}
+  - { env_var: "LMDB_BOOTSTRAP_URL", env_value: "http://example.com/Nano_64_version_20.7z", desc: "HTTP/HTTPS endpoint to download a 7z file with the data.ldb to bootstrap to this node"}
+
+# application setup block
+app_setup_block_enabled: true
+app_setup_block: |
+  ### Your Genesis account
+  By default this container will launch with a genesis block based on the private key `0000000000000000000000000000000000000000000000000000000000000000`, this should obviously only ever be used for testing purposes. Before you run your node you should use a script baked into this image to determine your private key and required environment variables: 
+
+  ```
+  docker run --rm --entrypoint /genesis.sh linuxserver/nano
+  Generating Genesis block
+  !!!!!!! ACCOUNT INFO SAVE THIS INFORMATION IT WILL NOT BE SHOWN AGAIN !!!!!!!!
+  Private Key: CD4CD6B1E5523D4B5AEDD2B1E5A447C6C6797E729A531A95F9AD7937FC7CD9EA
+  Public Key:  2D057DF2EB09E918D3F95B5FCA69A5FD3EA406EF7D1810106324CD7A99FAA32D
+  Account:     nano_1da7hqsgp4hb55bzkptzsbntdzbyni5gyzar41a88b8fhcezoasfjkgmyk5y
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  Container Environment Values:
+   -e LIVE_GENESIS_PUB=2D057DF2EB09E918D3F95B5FCA69A5FD3EA406EF7D1810106324CD7A99FAA32D \
+   -e LIVE_GENESIS_ACCOUNT=nano_1da7hqsgp4hb55bzkptzsbntdzbyni5gyzar41a88b8fhcezoasfjkgmyk5y \
+   -e LIVE_GENESIS_WORK=7fd88e48684600b7 \
+   -e LIVE_GENESIS_SIG=D1DF3A64BB43C131944401632215569A40AAE858ACF6CB59D5C77070E69DBF6435D93807877628A8B142DBF1AC4C562CD2F4CEBEB7D15486BDB7494A6146E007 \
+  ```
+
+  These environment variables will be used for all of the peers in your payment network, but if you are running what you would consider a public or live network never share your private key even if you have drained the funds from that account it can be potentionally used to create valid forks.
+  **Even Better**, you should never even trust our Docker image for generating a private key and open block. Do it on an airgapped machine and keep it on a paper wallet.
+
+  ### RPC Proxy settings
+  By default this container will enable RPC control and publish a custom service that acts as an RPC firewall giving you the ability to whitelist specific RPC calls and overide/add default values.
+
+  The default proxy config is stored in `/config/rpc-proxy.json`: 
+
+  ```
+  {
+    "port":3000,
+    "rpchost":"127.0.0.1",
+    "rpcport":7076,
+    "whitelist":[
+      "account_info",
+      "account_history",
+      "block_info",
+      "pending",
+      "process"
+    ],
+    "overrides":{
+      "account-history":{
+        "count":"64"
+      },
+      "pending":{
+        "count":"64"
+      }
+    }
+  }
+  ```
+
+  This should be a minimal amount of RPC access needed to run a local light wallet against this endpoint. If you plan on having your network users only run clientside light wallets (local blake2b block generation and block `process` call publishing) you should publically publish this port for access.
+
+  **Our Proxy has not been audited by any security team and is provided as is, though we make the best effort to keep it simple and secure**
+
+  ### Node configuration via environment
+  Before you get started please review the configuration docs [here](https://docs.nano.org/running-a-node/configuration/)
+  
+  We will pass the `CLI_OPTIONS` to the node run command example:
+
+  ```
+  -e CLI_OPTIONS='--config node.preconfigured_peers=[\"peering.yourhost.com\",\"peering.yourhost2.com\"] \
+                  --config node.receive_minimum = \"1000000000000000000000000\"'
+  ```
+
+  ### Clientside wallets
+  Currently we publish a pure javascript clientside wallet located here:  
+
+  WALLET DOCS HERE WHEN WE HAVE A POC
+
+# changelog
+changelogs:
+  - { date: "17.05.20:", desc: "Initial Release." }

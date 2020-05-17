@@ -1,0 +1,50 @@
+#!/usr/bin/with-contenv bash
+
+# Create config files if they don't exist
+if [ ! -f /config/config-node.toml ]; then
+  GENESIS_ACCOUNT=$(cat /genaccount)
+  nano_node --generate_config node | sed \
+    -e "/#preconfigured_representatives/c\preconfigured_representatives = [\"${LIVE_GENESIS_ACCOUNT}\"]" \
+    -e "/#preconfigured_peers/c\preconfigured_peers = [\"${PEER_HOST}\"]" \
+    -e "/\[rpc\]/,/false/s/#enable.*/enable = true/g" \
+    > /config/config-node.toml
+fi
+if [ ! -f /config/config-rpc.toml ]; then
+  nano_node --generate_config rpc | sed \
+    -e "s/#address.*/address = \"::0\"/g" \
+    -e "s/#enable_control.*/enable_control = true/g" \
+    > /config/config-rpc.toml
+fi
+
+# Copy default rpcproxy config if none exists
+if [ ! -f /config/rpc-proxy.json ]; then
+  cp /defaults/rpc-proxy.json /config/
+fi
+
+# Set block data from env
+echo '{
+        "type": "open",
+        "source": "'${LIVE_GENESIS_PUB}'",
+        "representative": "'${LIVE_GENESIS_ACCOUNT}'",
+        "account": "'${LIVE_GENESIS_ACCOUNT}'",
+        "work": "'${LIVE_GENESIS_WORK}'",
+        "signature": "'${LIVE_GENESIS_SIG}'"
+}' > /var/run/s6/container_environment/LIVE_GENESIS_BLOCK
+
+# Bootstrap database from URL if it does not exist
+if [ ! -f /config/data.ldb ] && [ -n ${LMDB_BOOTSTRAP_URL} ]; then
+  curl -o \
+  /config/lmdb.7z -L \
+  "${LMDB_BOOTSTRAP_URL}"
+  cd /config
+  7z x lmdb.7z
+  rm -f lmdb.7z
+  chown abc:abc data.ldb
+fi
+
+# ownership
+chown abc:abc \
+  /config/config-node.toml \
+  /config/config-rpc.toml \
+  /config/config-nano-pow-server.toml \
+  /config/rpc-proxy.json
