@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bash
+
+if [[ ! "${CLI_OPTIONS}" =~ .*log_to_cerr.* ]] || [[ ${CLI_OPTIONS+x} ]];then
+	export CLI_OPTIONS="${CLI_OPTIONS} --config node.logging.log_to_cerr=true"
+fi
+exec \
+	s6-setuidgid abc nano_node --daemon ${CLI_OPTIONS} --data_path /config

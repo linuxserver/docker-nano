@@ -1,0 +1,85 @@
+--- common.cpp	2020-05-17 09:27:48.230427492 -0700
++++ common.cpp.new	2020-05-17 09:29:47.915681968 -0700
+@@ -8,6 +8,7 @@
+ #include <boost/endian/conversion.hpp>
+ #include <boost/property_tree/json_parser.hpp>
+ 
++#include <cstdlib>
+ #include <iostream>
+ #include <limits>
+ #include <queue>
+@@ -21,39 +22,43 @@
+ size_t constexpr nano::state_block::size;
+ 
+ nano::nano_networks nano::network_constants::active_network = nano::nano_networks::ACTIVE_NETWORK;
+-
++std::string GetEnvOrDefault(const std::string& variable_name,const std::string& default_value)
++{
++	const char* value = getenv(variable_name.c_str());
++	return value ? value : default_value;
++}
+ namespace
+ {
+-char const * test_private_key_data = "34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4";
+-char const * test_public_key_data = "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
+-char const * beta_public_key_data = "A59A439B34662385D48F7FF9CA50030F889BAA9AC320EA5A85AAD777CF82B088"; // nano_3betagfmasj5iqcayzzssba185wamgobois1xbfadcpqgz9r7e6a1zwztn5o
+-char const * live_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
+-char const * test_genesis_data = R"%%%({
+-	"type": "open",
+-	"source": "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0",
+-	"representative": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
+-	"account": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
+-	"work": "7b42a00ee91d5810",
+-	"signature": "ECDA914373A2F0CA1296475BAEE40500A7F0A7AD72A5A80C81D7FAB7F6C802B2CC7DB50F5DD0FB25B2EF11761FA7344A158DD5A700B21BD47DE5BD0F63153A02"
+-	})%%%";
+-
+-char const * beta_genesis_data = R"%%%({
+-	"type": "open",
+-	"source": "A59A439B34662385D48F7FF9CA50030F889BAA9AC320EA5A85AAD777CF82B088",
+-	"representative": "nano_3betagfmasj5iqcayzzssba185wamgobois1xbfadcpqgz9r7e6a1zwztn5o",
+-	"account": "nano_3betagfmasj5iqcayzzssba185wamgobois1xbfadcpqgz9r7e6a1zwztn5o",
+-	"work": "cb4efb49972c7106",
+-	"signature": "C14ACC986C0561871B3382A93F5E64AFE55A3FA2EEE6892A7358DC817E2034AA56160CAA807A21EDFCFA528D034CD266F9ABFA4E2FF221D856255265BFDC0608"
+-	})%%%";
+-
+-char const * live_genesis_data = R"%%%({
+-	"type": "open",
+-	"source": "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA",
+-	"representative": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
+-	"account": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
+-	"work": "62f05417dd3fb691",
+-	"signature": "9F0C933C8ADE004D808EA1985FA746A7E95BA2A38F867640F53EC8F180BDFE9E2C1268DEAD7C2664F356E37ABA362BC58E46DBA03E523A7B5A19E4B6EB12BB02"
+-	})%%%";
++const std::string test_private_key_data = GetEnvOrDefault("LIVE_GENESIS_PRIVATE","34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4");
++const std::string test_public_key_data = GetEnvOrDefault("TEST_GENESIS_PUB","B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0"); // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
++const std::string beta_public_key_data = GetEnvOrDefault("BETA_GENESIS_PUB","259A4394DB16B1FFE5568476655E844BA59E8EB5D222F20D42E50684D0C16B54"); // nano_1betagcfp7ojzzkof35peohaakx7mt9ddnj4ya8n7sa8imae4ttnm16dm753
++const std::string live_public_key_data = GetEnvOrDefault("LIVE_GENESIS_PUB","E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"); // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
++const std::string test_genesis_data = GetEnvOrDefault("TEST_GENESIS_BLOCK",R"%%%({
++        "type": "open",
++        "source": "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0",
++        "representative": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
++        "account": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
++        "work": "7b42a00ee91d5810",
++        "signature": "ECDA914373A2F0CA1296475BAEE40500A7F0A7AD72A5A80C81D7FAB7F6C802B2CC7DB50F5DD0FB25B2EF11761FA7344A158DD5A700B21BD47DE5BD0F63153A02"
++        })%%%");
++
++const std::string beta_genesis_data = GetEnvOrDefault("BETA_GENESIS_BLOCK",R"%%%({
++        "type": "open",
++        "source": "259A4394DB16B1FFE5568476655E844BA59E8EB5D222F20D42E50684D0C16B54",
++        "representative": "nano_1betagcfp7ojzzkof35peohaakx7mt9ddnj4ya8n7sa8imae4ttnm16dm753",
++        "account": "nano_1betagcfp7ojzzkof35peohaakx7mt9ddnj4ya8n7sa8imae4ttnm16dm753",
++        "work": "7f5c2eb5e2658e81",
++        "signature": "DB9EFAC98A28EEA048E722F91C2A2720E1D8EF2A81453C80FC53B453180C0A264CE021D38D5B4540B1BBB0C378B80F2DF7389027593C08DDEF9F47934B9CF805"
++        })%%%");
++
++const std::string live_genesis_data = GetEnvOrDefault("LIVE_GENESIS_BLOCK",R"%%%({
++        "type": "open",
++        "source": "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA",
++        "representative": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
++        "account": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
++        "work": "62f05417dd3fb691",
++        "signature": "9F0C933C8ADE004D808EA1985FA746A7E95BA2A38F867640F53EC8F180BDFE9E2C1268DEAD7C2664F356E37ABA362BC58E46DBA03E523A7B5A19E4B6EB12BB02"
++        })%%%");
+ }
+ 
+ nano::network_params::network_params () :
