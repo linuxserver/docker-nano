@@ -72,7 +72,7 @@ docker create \
   -e LIVE_GENESIS_ACCOUNT=nano_18gmu6engqhgtjnppqam181o5nfhj4sdtgyhy36dan3jr9spt84rzwmktafc `#optional` \
   -e LIVE_GENESIS_WORK=820cc9d17342799c `#optional` \
   -e LIVE_GENESIS_SIG=012B814F60A97B9C40D066C3C104383C335633D74A0566E0A0C6D1DDA7BBFA4011547AA0374B6B3146F290352E5EC6C81551032583219F8A372C236DD65BA90D `#optional` \
-  -e CLI_OPTIONS='--config node.receive_minimum = \"1000000000000000000000000\"' `#optional` \
+  -e CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"' `#optional` \
   -e LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z `#optional` \
   -p 7075:7075/udp \
   -p 7075:7075/tcp \
@@ -103,7 +103,7 @@ services:
       - LIVE_GENESIS_ACCOUNT=nano_18gmu6engqhgtjnppqam181o5nfhj4sdtgyhy36dan3jr9spt84rzwmktafc #optional
       - LIVE_GENESIS_WORK=820cc9d17342799c #optional
       - LIVE_GENESIS_SIG=012B814F60A97B9C40D066C3C104383C335633D74A0566E0A0C6D1DDA7BBFA4011547AA0374B6B3146F290352E5EC6C81551032583219F8A372C236DD65BA90D #optional
-      - CLI_OPTIONS='--config node.receive_minimum = \"1000000000000000000000000\"' #optional
+      - CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"' #optional
       - LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z #optional
     volumes:
       - /path/to/data:/config
@@ -131,7 +131,7 @@ Container images are configured using parameters passed at runtime (such as thos
 | `-e LIVE_GENESIS_ACCOUNT=nano_18gmu6engqhgtjnppqam181o5nfhj4sdtgyhy36dan3jr9spt84rzwmktafc` | Genesis block account |
 | `-e LIVE_GENESIS_WORK=820cc9d17342799c` | Genesis block proof of work |
 | `-e LIVE_GENESIS_SIG=012B814F60A97B9C40D066C3C104383C335633D74A0566E0A0C6D1DDA7BBFA4011547AA0374B6B3146F290352E5EC6C81551032583219F8A372C236DD65BA90D` | Genesis block signature |
-| `-e CLI_OPTIONS='--config node.receive_minimum = \"1000000000000000000000000\"'` | Node run command cli args |
+| `-e CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"'` | Node run command cli args |
 | `-e LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z` | HTTP/HTTPS endpoint to download a 7z file with the data.ldb to bootstrap to this node |
 | `-v /config` | Database and Radarr configs |
 
@@ -223,8 +223,8 @@ Before you get started please review the configuration docs [here](https://docs.
 We will pass the `CLI_OPTIONS` to the node run command example:
 
 ```
--e CLI_OPTIONS='--config node.preconfigured_peers=[\"peering.yourhost.com\",\"peering.yourhost2.com\"] \
-                --config node.receive_minimum = \"1000000000000000000000000\"'
+-e CLI_OPTIONS='--config node.preconfigured_peers=["peering.yourhost.com","peering.yourhost2.com"] \
+                --config node.receive_minimum = "1000000000000000000000000"'
 ```
 
 ### Clientside wallets
