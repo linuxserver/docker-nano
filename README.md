@@ -122,7 +122,7 @@ Container images are configured using parameters passed at runtime (such as thos
 | :----: | --- |
 | `-p 7075/udp` | Nano communication port UDP |
 | `-p 7075/tcp` | Nano communication port TCP |
-| `-p 3000` | RPC interface filtered through a proxy |
+| `-p 3000` | RPC interface filtered through a proxy use 3001 for internal port for https |
 | `-e PUID=1000` | for UserID - see below for explanation |
 | `-e PGID=1000` | for GroupID - see below for explanation |
 | `-e TZ=Europe/London` | Specify a timezone to use EG Europe/London |
@@ -193,8 +193,11 @@ The default proxy config is stored in `/config/rpc-proxy.json`:
 ```
 {
   "port":3000,
+  "httpsport":3001,
   "rpchost":"127.0.0.1",
   "rpcport":7076,
+  "certfile":"/config/ssl/cert.crt",
+  "keyfile":"/config/ssl/cert.key",
   "whitelist":[
     "account_info",
     "account_history",
@@ -214,6 +217,10 @@ The default proxy config is stored in `/config/rpc-proxy.json`:
 ```
 
 This should be a minimal amount of RPC access needed to run a local light wallet against this endpoint. If you plan on having your network users only run clientside light wallets (local blake2b block generation and block `process` call publishing) you should publically publish this port for access.
+
+To properly host a lite wallet you will likely want to use the https port for your proxy by specifying `-p 7076:3001` in your create command or compose file. We will generate self signed cert/key combo but you should add the ones associated with your domain. This will allow yours and other https hosted light wallets to hit your RPC endpoint clientside from the users web browser.
+
+Outside of potential https tunneling and actual object parsing (will remove duplicate keys) this is not a conventional API, it simply acts as a firewall and will send and return data just like a local RPC server would.
 
 **Our Proxy has not been audited by any security team and is provided as is, though we make the best effort to keep it simple and secure**
 

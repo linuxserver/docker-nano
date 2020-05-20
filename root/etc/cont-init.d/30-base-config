@@ -1,5 +1,15 @@
 #!/usr/bin/with-contenv bash
 
+# Generate self signed cert if one does not exist
+SUBJECT="/C=US/ST=CA/L=Carlsbad/O=Linuxserver.io/OU=LSIO Server/CN=*"
+if [ -f /config/ssl/cert.key ] && [ -f /config/ssl/cert.crt ]; then
+  echo "using keys found in /config/keys"
+else
+  mkdir -p /config/ssl
+  echo "generating self-signed keys in /config/ssl, you can replace these with your own keys if required"
+  openssl req -new -x509 -days 3650 -nodes -out /config/ssl/cert.crt -keyout /config/ssl/cert.key -subj "$SUBJECT"
+fi
+
 # Create config files if they don't exist
 if [ ! -f /config/config-node.toml ]; then
   GENESIS_ACCOUNT=$(cat /genaccount)
@@ -47,3 +57,5 @@ chown abc:abc \
   /config/config-node.toml \
   /config/config-rpc.toml \
   /config/rpc-proxy.json
+chown -R abc:abc \
+  /config/ssl
