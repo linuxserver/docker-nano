@@ -83,6 +83,7 @@ RUN \
  apk add --no-cache \
 	curl \
 	nodejs \
+	openssl \
 	p7zip && \
  echo "**** clean up ****" && \
  rm -rf \

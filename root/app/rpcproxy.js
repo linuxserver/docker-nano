@@ -1,9 +1,25 @@
 // RPC Proxy
 // Simple Node.js app to whitelist specific RPC functions on a control enabled endpoint
 var http = require('http');
+var https = require('https');
+var fs = require('fs');
 var config = require('/config/rpc-proxy.json');
+var privateKey = fs.readFileSync(config.keyfile).toString();
+var certificate = fs.readFileSync(config.certfile).toString();
 
-http.createServer((req, res) => {
+http.createServer((req,res) => {
+  rpcproxy(req,res);
+}).listen(config.port, () => {
+    console.log('RPC Proxy is running on port '+ config.port +' to http://' + config.rpchost + ':' + config.rpcport,);
+});
+
+https.createServer({key:privateKey,cert:certificate}, (req,res) => {
+  rpcproxy(req,res);
+}).listen(config.httpsport, () => {
+    console.log('RPC Https Proxy is running on port '+ config.httpsport +' to http://' + config.rpchost + ':' + config.rpcport,);
+});
+
+function rpcproxy(req,res) {
   var body = '';
   res.setHeader("Access-Control-Allow-Origin", "*");
   req.on('data', function (data) {
@@ -57,6 +73,4 @@ http.createServer((req, res) => {
       res.end();
     }
   });
-}).listen(config.port, () => {
-    console.log('RPC Proxy is running on port '+ config.port +' to http://' + config.rpchost + ':' + config.rpcport,);
-});
+}
