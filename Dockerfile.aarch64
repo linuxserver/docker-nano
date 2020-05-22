@@ -92,5 +92,5 @@ RUN \
 COPY --from=builder /buildout /
 
 # ports and volumes
-EXPOSE 7075/udp 7075/tcp 7076
+EXPOSE 7075/udp 7075/tcp 7076 7077
 VOLUME /config

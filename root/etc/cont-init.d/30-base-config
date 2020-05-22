@@ -12,7 +12,6 @@ fi
 
 # Create config files if they don't exist
 if [ ! -f /config/config-node.toml ]; then
-  GENESIS_ACCOUNT=$(cat /genaccount)
   nano_node --generate_config node | sed \
     -e "/#preconfigured_representatives/c\preconfigured_representatives = [\"${LIVE_GENESIS_ACCOUNT}\"]" \
     -e "/#preconfigured_peers/c\preconfigured_peers = [\"${PEER_HOST}\"]" \
