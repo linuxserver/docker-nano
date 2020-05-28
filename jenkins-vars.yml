@@ -3,9 +3,10 @@
 # jenkins variables
 project_name: docker-nano
 external_type: github_stable
-release_type: stable
+release_type: prerelease
 release_tag: latest
-ls_branch: master
+ls_branch: bin-stable
+skip_package_check: true
 use_qemu: true
 repo_vars:
   - EXT_GIT_BRANCH = 'master'
@@ -15,16 +16,9 @@ repo_vars:
   - LS_USER = 'linuxserver'
   - LS_REPO = 'docker-nano'
   - CONTAINER_NAME = 'nano'
-  - DOCKERHUB_IMAGE = 'linuxserver/nano'
-  - DEV_DOCKERHUB_IMAGE = 'lsiodev/nano'
-  - PR_DOCKERHUB_IMAGE = 'lspipepr/nano'
+  - DOCKERHUB_IMAGE = 'lsiodev/nano-stable'
+  - DEV_DOCKERHUB_IMAGE = 'lsiodev/nano-stable-dev'
+  - PR_DOCKERHUB_IMAGE = 'lspipepr/nano-stable'
   - DIST_IMAGE = 'alpine'
   - MULTIARCH='true'
-  - CI='true'
-  - CI_WEB='false'
-  - CI_PORT='80'
-  - CI_SSL='false'
-  - CI_DELAY='30'
-  - CI_DOCKERENV='TZ=US/Pacific'
-  - CI_AUTH='user:password'
-  - CI_WEBPATH=''
+  - CI='false'
