@@ -103,7 +103,7 @@ pipeline {
       steps{
         script{
           env.EXT_RELEASE = sh(
-            script: ''' curl -sL 'https://api.github.com/repos/nanocurrency/nano-node/tags' | jq -r '.[].name' | grep -Po 'V(\d+\.)+\d+[A-Z][A-Z].*' | head -n1
+            script: ''' curl -sL 'https://api.github.com/repos/nanocurrency/nano-node/tags' | jq -r '.[].name' | grep -Po 'V(\\d+\\.)+\\d+[A-Z][A-Z].*' | head -n1
  ''',
             returnStdout: true).trim()
             env.RELEASE_LINK = 'custom_command'
