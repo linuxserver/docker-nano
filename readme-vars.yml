@@ -19,7 +19,7 @@ full_custom_readme: |
   &nbsp;
   &nbsp;
 
-  This is an internal image layer used for downstream images needing nano node compiled bins
+  This is an internal image layer used for downstream images needing nano node beta compiled bins
 
   The following line is only in this repo for loop testing:
 

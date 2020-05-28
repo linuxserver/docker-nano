@@ -21,8 +21,9 @@ RUN \
 RUN \
  echo "**** grabbing source ****" && \
  if [ -z ${NANO_RELEASE+x} ]; then \
-	NANO_RELEASE=$(wget -q -O - "https://api.github.com/repos/nanocurrency/nano-node/releases/latest"\
-	| awk '/tag_name/{print $4;exit}' FS='[""]'); \
+	NANO_RELEASE=$(curl -sL "https://api.github.com/repos/nanocurrency/nano-node/tags" \
+	| jq -r '.[].name' \
+	| grep -Po "V(\d+\.)+\d+[A-Z][A-Z].*" | head -n1); \
  fi && \
  git clone https://github.com/nanocurrency/nano-node.git /tmp/src && \
  cd /tmp/src && \
@@ -37,7 +38,7 @@ RUN \
 COPY /buildroot /
 RUN \
  echo "**** patching and compiling node software ****" && \
- patch /tmp/src/nano/secure/common.cpp < /common.patch.$(cat /release) && \
+ patch /tmp/src/nano/secure/common.cpp < /common.patch.beta && \
  echo "" > /tmp/src/rep_weights_live.bin && \
  echo "" > /tmp/src/rep_weights_beta.bin && \
  cd /tmp/build && \
