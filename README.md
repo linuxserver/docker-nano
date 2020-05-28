@@ -54,6 +54,14 @@ The architectures supported by this image are:
 | x86-64 | amd64-latest |
 | arm64 | arm64v8-latest |
 
+## Version Tags
+
+This image provides various versions that are available via tags. `latest` tag usually provides the latest stable version. Others are considered under development and caution must be exercised when using them.
+
+| Tag | Description |
+| :----: | --- |
+| latest | Stable Nano releases |
+| beta | Beta Nano releases |
 
 ## Usage
 
@@ -136,7 +144,7 @@ Container images are configured using parameters passed at runtime (such as thos
 | `-e LIVE_GENESIS_SIG=BLOCK_SIGNATURE` | Genesis block signature |
 | `-e CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"'` | Node run command cli args |
 | `-e LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z` | HTTP/HTTPS endpoint to download a 7z file with the data.ldb to bootstrap to this node |
-| `-v /config` | Database and Radarr configs |
+| `-v /config` | Main storage for config and blockchain |
 
 ## Environment variables from files (Docker secrets)
 
@@ -268,7 +276,7 @@ curl -d '{ "action": "wallet_create" }' localhost:7076
 curl -d '{ "action": "wallet_add", "wallet": "REPLACE_WITH_WALLET_ID", "key": "0000000000000000000000000000000000000000000000000000000000000000" }' localhost:7076
 ```
 
-You can now use the default private key `0000000000000000000000000000000000000000000000000000000000000000` in the web wallet to manage the genesis funds. By acessing the hosted live wallet http://wallet.linuxserver.io/?node=REPLACE_WITH_LOCAL_IP or run a simple nginx container located [here](https://github.com/linuxserver/docker-nano-wallet) to host a wallet locally.
+You can now use the default private key `0000000000000000000000000000000000000000000000000000000000000000` in the web wallet to manage the genesis funds. By acessing the hosted live wallet http://wallet.linuxserver.io/ or run a simple nginx container located [here](https://github.com/linuxserver/docker-nano-wallet) to host a wallet locally.
 
 By default you will be running an insecure centralized network with a single voting representative and a zero security private key using the commands above. To spinup a standard private or even public network you should read up on Nano's documentation [HERE](https://docs.nano.org/) and continue reading the network design section below. 
 
@@ -326,6 +334,29 @@ https://github.com/linuxserver/nano-wallet
 
 It is designed to be run 100% clientside in any web browser and use public RPC endpoints to hook into any network and conduct transactions by locally signing then publishing the result.
 This can be hosted locally with any simple webserver and pointed to a locally run peer, but for full functionality we reccomend providing a public Https URL with these files along with plugging in legitamite SSL certificates into your RPC endpoints running on 7077.
+
+# Running a node on the LinuxServer network
+
+We maintain our own network which users can get funds to transact on from our [Discord](https://discord.gg/YWrKVTn) server. If you would like to run a node on our network here is our Docker run command:
+```
+docker create \
+  --name=lsio-node \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e TZ=Europe/London \
+  -e PEER_HOST=peering.linuxserver.io \
+  -e LIVE_GENESIS_PUB=79F2E157B5667F1C8B6CCB6DF691DAC032B85DEC39E231D29976DCED05F5B1BE \
+  -e LIVE_GENESIS_ACCOUNT=nano_1yhkw7ducsmz5k7pskufytaxoi3kq3gyrgh489bbkxpwxn4zdefyn4rmrrkk \
+  -e LIVE_GENESIS_WORK=c51204c6b69384cb \
+  -e LIVE_GENESIS_SIG=90DDE7B4DC038811180FF5DDE8594F1774542A7AADE3DB71A57AA38A5AED42672E1E8D7ACFAC315BDB0EB5DCB542C610B9C49B2560AE575073855259AF065509 \
+  -p 7075:7075/udp \
+  -p 7075:7075/tcp \
+  -p 7076:3000 \
+  -p 7077:3001 \
+  -v /path/to/data:/config \
+  --restart unless-stopped \
+  linuxserver/nano
+```
 
 
 ## Docker Mods
@@ -398,4 +429,5 @@ Once registered you can define the dockerfile to use with `-f Dockerfile.aarch64
 
 ## Versions
 
+* **28.05.20:** - Add beta tag.
 * **17.05.20:** - Initial Release.

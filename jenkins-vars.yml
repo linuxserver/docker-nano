@@ -2,15 +2,14 @@
 
 # jenkins variables
 project_name: docker-nano
-external_type: github_stable
-release_type: stable
-release_tag: latest
-ls_branch: master
+external_type: na
+custom_version_command: |
+  curl -sL 'https://api.github.com/repos/nanocurrency/nano-node/tags' | jq -r '.[].name' | grep -Po 'V(\d+\.)+\d+[A-Z][A-Z].*' | head -n1
+release_type: prerelease
+release_tag: beta
+ls_branch: beta
 use_qemu: true
 repo_vars:
-  - EXT_GIT_BRANCH = 'master'
-  - EXT_USER = 'nanocurrency'
-  - EXT_REPO = 'nano-node'
   - BUILD_VERSION_ARG = 'NANO_RELEASE'
   - LS_USER = 'linuxserver'
   - LS_REPO = 'docker-nano'
