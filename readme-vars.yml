@@ -90,7 +90,7 @@ app_setup_block: |
         "count":"64"
       },
       "pending":{
-        "count":"64"
+        "count":"8"
       }
     }
   }
