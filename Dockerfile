@@ -38,6 +38,11 @@ COPY /buildroot /
 RUN \
  echo "**** patching and compiling node software ****" && \
  patch /tmp/src/nano/secure/common.cpp < /common.patch.$(cat /release) && \
+ sed -i \
+	-e '/preconfigured_representatives.emplace_back/d' \
+	-e 's/peering-beta.nano.org/localhost/g' \
+	-e 's/peering.nano.org/localhost/g' \
+	/tmp/src/nano/node/nodeconfig.cpp && \
  echo "" > /tmp/src/rep_weights_live.bin && \
  echo "" > /tmp/src/rep_weights_beta.bin && \
  cd /tmp/build && \
