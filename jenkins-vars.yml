@@ -4,11 +4,10 @@
 project_name: docker-nano
 external_type: na
 custom_version_command: |
-  curl -sL 'https://api.github.com/repos/nanocurrency/nano-node/tags' | jq -r '.[].name' | grep -Po 'V(\\d+\\.)+\\d+[A-Z][A-Z].*' | head -n1
+  curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-beta/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1
 release_type: prerelease
 release_tag: beta
 ls_branch: beta
-use_qemu: true
 repo_vars:
   - BUILD_VERSION_ARG = 'NANO_RELEASE'
   - LS_USER = 'linuxserver'
