@@ -21,9 +21,9 @@ RUN \
 RUN \
  echo "**** grabbing source ****" && \
  if [ -z ${NANO_RELEASE+x} ]; then \
-	NANO_RELEASE=$(curl -sL "https://api.github.com/repos/nanocurrency/nano-node/tags" \
-	| jq -r '.[].name' \
-	| grep -Po "V(\d+\.)+\d+[A-Z][A-Z].*" | head -n1); \
+	NANO_RELEASE=$(curl -sL 'https://hub.docker.com/v2/repositories/nanocurrency/nano-beta/tags' \
+	|jq -r '.results[].name' \
+	|grep -Po "V\d+\d+.*" | head -n1); \
  fi && \
  git clone https://github.com/nanocurrency/nano-node.git /tmp/src && \
  cd /tmp/src && \
