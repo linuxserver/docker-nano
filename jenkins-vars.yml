@@ -2,15 +2,13 @@
 
 # jenkins variables
 project_name: docker-nano
-external_type: github_stable
+external_type: na
+custom_version_command: |
+  curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-stable/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1
 release_type: stable
 release_tag: latest
 ls_branch: master
-use_qemu: true
 repo_vars:
-  - EXT_GIT_BRANCH = 'master'
-  - EXT_USER = 'nanocurrency'
-  - EXT_REPO = 'nano-node'
   - BUILD_VERSION_ARG = 'NANO_RELEASE'
   - LS_USER = 'linuxserver'
   - LS_REPO = 'docker-nano'

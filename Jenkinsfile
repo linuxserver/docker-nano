@@ -16,9 +16,6 @@ pipeline {
     GITHUB_TOKEN=credentials('498b4638-2d02-4ce5-832d-8a57d01d97ab')
     GITLAB_TOKEN=credentials('b6f0f1dd-6952-4cf6-95d1-9c06380283f0')
     GITLAB_NAMESPACE=credentials('gitlab-namespace-id')
-    EXT_GIT_BRANCH = 'master'
-    EXT_USER = 'nanocurrency'
-    EXT_REPO = 'nano-node'
     BUILD_VERSION_ARG = 'NANO_RELEASE'
     LS_USER = 'linuxserver'
     LS_REPO = 'docker-nano'
@@ -101,23 +98,17 @@ pipeline {
     /* ########################
        External Release Tagging
        ######################## */
-    // If this is a stable github release use the latest endpoint from github to determine the ext tag
-    stage("Set ENV github_stable"){
-     steps{
-       script{
-         env.EXT_RELEASE = sh(
-           script: '''curl -s https://api.github.com/repos/${EXT_USER}/${EXT_REPO}/releases/latest | jq -r '. | .tag_name' ''',
-           returnStdout: true).trim()
-       }
-     }
-    }
-    // If this is a stable or devel github release generate the link for the build message
-    stage("Set ENV github_link"){
-     steps{
-       script{
-         env.RELEASE_LINK = 'https://github.com/' + env.EXT_USER + '/' + env.EXT_REPO + '/releases/tag/' + env.EXT_RELEASE
-       }
-     }
+    // If this is a custom command to determine version use that command
+    stage("Set tag custom bash"){
+      steps{
+        script{
+          env.EXT_RELEASE = sh(
+            script: ''' curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-stable/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1
+ ''',
+            returnStdout: true).trim()
+            env.RELEASE_LINK = 'custom_command'
+        }
+      }
     }
     // Sanitize the release tag and strip illegal docker or github characters
     stage("Sanitize tag"){
@@ -138,7 +129,6 @@ pipeline {
       steps {
         script{
           env.IMAGE = env.DOCKERHUB_IMAGE
-          env.QUAYIMAGE = 'quay.io/linuxserver.io/' + env.CONTAINER_NAME
           env.GITHUBIMAGE = 'docker.pkg.github.com/' + env.LS_USER + '/' + env.LS_REPO + '/' + env.CONTAINER_NAME
           env.GITLABIMAGE = 'registry.gitlab.com/linuxserver.io/' + env.LS_REPO + '/' + env.CONTAINER_NAME
           if (env.MULTIARCH == 'true') {
@@ -159,7 +149,6 @@ pipeline {
       steps {
         script{
           env.IMAGE = env.DEV_DOCKERHUB_IMAGE
-          env.QUAYIMAGE = 'quay.io/linuxserver.io/lsiodev-' + env.CONTAINER_NAME
           env.GITHUBIMAGE = 'docker.pkg.github.com/' + env.LS_USER + '/' + env.LS_REPO + '/lsiodev-' + env.CONTAINER_NAME
           env.GITLABIMAGE = 'registry.gitlab.com/linuxserver.io/' + env.LS_REPO + '/lsiodev-' + env.CONTAINER_NAME
           if (env.MULTIARCH == 'true') {
@@ -180,7 +169,6 @@ pipeline {
       steps {
         script{
           env.IMAGE = env.PR_DOCKERHUB_IMAGE
-          env.QUAYIMAGE = 'quay.io/linuxserver.io/lspipepr-' + env.CONTAINER_NAME
           env.GITHUBIMAGE = 'docker.pkg.github.com/' + env.LS_USER + '/' + env.LS_REPO + '/lspipepr-' + env.CONTAINER_NAME
           env.GITLABIMAGE = 'registry.gitlab.com/linuxserver.io/' + env.LS_REPO + '/lspipepr-' + env.CONTAINER_NAME
           if (env.MULTIARCH == 'true') {
@@ -339,7 +327,7 @@ pipeline {
         }
         stage('Build ARMHF') {
           agent {
-            label 'X86-64-MULTI'
+            label 'ARMHF'
           }
           steps {
             withCredentials([
@@ -368,7 +356,7 @@ pipeline {
         }
         stage('Build ARM64') {
           agent {
-            label 'X86-64-MULTI'
+            label 'ARM64'
           }
           steps {
             withCredentials([
@@ -545,22 +533,15 @@ pipeline {
             credentialsId: '3f9ba4d5-100d-45b0-a3c4-633fd6061207',
             usernameVariable: 'DOCKERUSER',
             passwordVariable: 'DOCKERPASS'
-          ],
-          [
-            $class: 'UsernamePasswordMultiBinding',
-            credentialsId: 'Quay.io-Robot',
-            usernameVariable: 'QUAYUSER',
-            passwordVariable: 'QUAYPASS'
           ]
         ]) {
           retry(5) {
             sh '''#! /bin/bash
                   set -e
-                  echo $QUAYPASS | docker login quay.io -u $QUAYUSER --password-stdin
                   echo $DOCKERPASS | docker login -u $DOCKERUSER --password-stdin
                   echo $GITHUB_TOKEN | docker login docker.pkg.github.com -u LinuxServer-CI --password-stdin
                   echo $GITLAB_TOKEN | docker login registry.gitlab.com -u LinuxServer.io --password-stdin
-                  for PUSHIMAGE in "${QUAYIMAGE}" "${GITHUBIMAGE}" "${GITLABIMAGE}" "${IMAGE}"; do
+                  for PUSHIMAGE in "${GITHUBIMAGE}" "${GITLABIMAGE}" "${IMAGE}"; do
                     docker tag ${IMAGE}:${META_TAG} ${PUSHIMAGE}:${META_TAG}
                     docker tag ${PUSHIMAGE}:${META_TAG} ${PUSHIMAGE}:latest
                     docker push ${PUSHIMAGE}:latest
@@ -569,7 +550,7 @@ pipeline {
                '''
           }
           sh '''#! /bin/bash
-                for DELETEIMAGE in "${QUAYIMAGE}" "${GITHUBIMAGE}" "{GITLABIMAGE}" "${IMAGE}"; do
+                for DELETEIMAGE in "${GITHUBIMAGE}" "{GITLABIMAGE}" "${IMAGE}"; do
                   docker rmi \
                   ${DELETEIMAGE}:${META_TAG} \
                   ${DELETEIMAGE}:latest || :
@@ -591,18 +572,11 @@ pipeline {
             credentialsId: '3f9ba4d5-100d-45b0-a3c4-633fd6061207',
             usernameVariable: 'DOCKERUSER',
             passwordVariable: 'DOCKERPASS'
-          ],
-          [
-            $class: 'UsernamePasswordMultiBinding',
-            credentialsId: 'Quay.io-Robot',
-            usernameVariable: 'QUAYUSER',
-            passwordVariable: 'QUAYPASS'
           ]
         ]) {
           retry(5) {
             sh '''#! /bin/bash
                   set -e
-                  echo $QUAYPASS | docker login quay.io -u $QUAYUSER --password-stdin
                   echo $DOCKERPASS | docker login -u $DOCKERUSER --password-stdin
                   echo $GITHUB_TOKEN | docker login docker.pkg.github.com -u LinuxServer-CI --password-stdin
                   echo $GITLAB_TOKEN | docker login registry.gitlab.com -u LinuxServer.io --password-stdin
@@ -636,26 +610,24 @@ pipeline {
                     docker manifest push --purge ${MANIFESTIMAGE}:latest
                     docker manifest push --purge ${MANIFESTIMAGE}:${META_TAG} 
                   done
-                  for LEGACYIMAGE in "${GITHUBIMAGE}" "${QUAYIMAGE}"; do
-                    docker tag ${IMAGE}:amd64-${META_TAG} ${LEGACYIMAGE}:amd64-${META_TAG}
-                    docker tag ${IMAGE}:arm32v7-${META_TAG} ${LEGACYIMAGE}:arm32v7-${META_TAG}
-                    docker tag ${IMAGE}:arm64v8-${META_TAG} ${LEGACYIMAGE}:arm64v8-${META_TAG}
-                    docker tag ${LEGACYIMAGE}:amd64-${META_TAG} ${LEGACYIMAGE}:latest
-                    docker tag ${LEGACYIMAGE}:amd64-${META_TAG} ${LEGACYIMAGE}:${META_TAG}
-                    docker tag ${LEGACYIMAGE}:arm32v7-${META_TAG} ${LEGACYIMAGE}:arm32v7-latest
-                    docker tag ${LEGACYIMAGE}:arm64v8-${META_TAG} ${LEGACYIMAGE}:arm64v8-latest
-                    docker push ${LEGACYIMAGE}:amd64-${META_TAG}
-                    docker push ${LEGACYIMAGE}:arm32v7-${META_TAG}
-                    docker push ${LEGACYIMAGE}:arm64v8-${META_TAG}
-                    docker push ${LEGACYIMAGE}:latest
-                    docker push ${LEGACYIMAGE}:${META_TAG}
-                    docker push ${LEGACYIMAGE}:arm32v7-latest
-                    docker push ${LEGACYIMAGE}:arm64v8-latest
-                  done
+                  docker tag ${IMAGE}:amd64-${META_TAG} ${GITHUBIMAGE}:amd64-${META_TAG}
+                  docker tag ${IMAGE}:arm32v7-${META_TAG} ${GITHUBIMAGE}:arm32v7-${META_TAG}
+                  docker tag ${IMAGE}:arm64v8-${META_TAG} ${GITHUBIMAGE}:arm64v8-${META_TAG}
+                  docker tag ${GITHUBIMAGE}:amd64-${META_TAG} ${GITHUBIMAGE}:latest
+                  docker tag ${GITHUBIMAGE}:amd64-${META_TAG} ${GITHUBIMAGE}:${META_TAG}
+                  docker tag ${GITHUBIMAGE}:arm32v7-${META_TAG} ${GITHUBIMAGE}:arm32v7-latest
+                  docker tag ${GITHUBIMAGE}:arm64v8-${META_TAG} ${GITHUBIMAGE}:arm64v8-latest
+                  docker push ${GITHUBIMAGE}:amd64-${META_TAG}
+                  docker push ${GITHUBIMAGE}:arm32v7-${META_TAG}
+                  docker push ${GITHUBIMAGE}:arm64v8-${META_TAG}
+                  docker push ${GITHUBIMAGE}:latest
+                  docker push ${GITHUBIMAGE}:${META_TAG}
+                  docker push ${GITHUBIMAGE}:arm32v7-latest
+                  docker push ${GITHUBIMAGE}:arm64v8-latest
                '''
           }
           sh '''#! /bin/bash
-                for DELETEIMAGE in "${QUAYIMAGE}" "${GITHUBIMAGE}" "${GITLABIMAGE}" "${IMAGE}"; do
+                for DELETEIMAGE in "${GITHUBIMAGE}" "${GITLABIMAGE}" "${IMAGE}"; do
                   docker rmi \
                   ${DELETEIMAGE}:amd64-${META_TAG} \
                   ${DELETEIMAGE}:amd64-latest \
@@ -691,11 +663,11 @@ pipeline {
              "tagger": {"name": "LinuxServer Jenkins","email": "jenkins@linuxserver.io","date": "'${GITHUB_DATE}'"}}' '''
         echo "Pushing New release for Tag"
         sh '''#! /bin/bash
-              curl -s https://api.github.com/repos/${EXT_USER}/${EXT_REPO}/releases/latest | jq '. |.body' | sed 's:^.\\(.*\\).$:\\1:' > releasebody.json
+              echo "Updating to ${EXT_RELEASE_CLEAN}" > releasebody.json
               echo '{"tag_name":"'${EXT_RELEASE_CLEAN}'-ls'${LS_TAG_NUMBER}'",\
                      "target_commitish": "master",\
                      "name": "'${EXT_RELEASE_CLEAN}'-ls'${LS_TAG_NUMBER}'",\
-                     "body": "**LinuxServer Changes:**\\n\\n'${LS_RELEASE_NOTES}'\\n**'${EXT_REPO}' Changes:**\\n\\n' > start
+                     "body": "**LinuxServer Changes:**\\n\\n'${LS_RELEASE_NOTES}'\\n**Remote Changes:**\\n\\n' > start
               printf '","draft": false,"prerelease": false}' >> releasebody.json
               paste -d'\\0' start releasebody.json > releasebody.json.done
               curl -H "Authorization: token ${GITHUB_TOKEN}" -X POST https://api.github.com/repos/${LS_USER}/${LS_REPO}/releases -d @releasebody.json.done'''

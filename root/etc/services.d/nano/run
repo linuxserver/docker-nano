@@ -3,8 +3,5 @@
 if [[ ! "${CLI_OPTIONS}" =~ .*log_to_cerr.* ]] || [[ ${CLI_OPTIONS+x} ]];then
 	export CLI_OPTIONS="${CLI_OPTIONS} --config node.logging.log_to_cerr=true"
 fi
-if [[ ! "${CLI_OPTIONS}" =~ .*allow_local_peers.* ]];then
-        export CLI_OPTIONS="${CLI_OPTIONS} --config node.allow_local_peers=true"
-fi
 exec \
 	s6-setuidgid abc nano_node --daemon ${CLI_OPTIONS} --data_path /config
