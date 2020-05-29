@@ -103,7 +103,7 @@ pipeline {
       steps{
         script{
           env.EXT_RELEASE = sh(
-            script: ''' curl -sL 'https://api.github.com/repos/nanocurrency/nano-node/tags' | jq -r '.[].name' | grep -Po 'V(\\d+\\.)+\\d+[A-Z][A-Z].*' | head -n1
+            script: ''' curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-beta/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1
  ''',
             returnStdout: true).trim()
             env.RELEASE_LINK = 'custom_command'
@@ -327,7 +327,7 @@ pipeline {
         }
         stage('Build ARMHF') {
           agent {
-            label 'X86-64-MULTI'
+            label 'ARMHF'
           }
           steps {
             withCredentials([
@@ -356,7 +356,7 @@ pipeline {
         }
         stage('Build ARM64') {
           agent {
-            label 'X86-64-MULTI'
+            label 'ARM64'
           }
           steps {
             withCredentials([
