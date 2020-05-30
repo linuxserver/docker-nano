@@ -79,10 +79,9 @@ docker create \
   -e LIVE_GENESIS_ACCOUNT=nano_xxxxxx `#optional` \
   -e LIVE_GENESIS_WORK=WORK_FOR_BLOCK `#optional` \
   -e LIVE_GENESIS_SIG=BLOCK_SIGNATURE `#optional` \
-  -e CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"' `#optional` \
+  -e CLI_OPTIONS=--config node.enable_voting=true `#optional` \
   -e LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z `#optional` \
-  -p 7075:7075/udp \
-  -p 7075:7075/tcp \
+  -p 8075:8075 \
   -p 7076:3000 \
   -p 7077:3001 \
   -v /path/to/data:/config \
@@ -111,13 +110,12 @@ services:
       - LIVE_GENESIS_ACCOUNT=nano_xxxxxx #optional
       - LIVE_GENESIS_WORK=WORK_FOR_BLOCK #optional
       - LIVE_GENESIS_SIG=BLOCK_SIGNATURE #optional
-      - CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"' #optional
+      - CLI_OPTIONS=--config node.enable_voting=true #optional
       - LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z #optional
     volumes:
       - /path/to/data:/config
     ports:
-      - 7075:7075/udp
-      - 7075:7075/tcp
+      - 8075:8075
       - 7076:3000
       - 7077:3001
     restart: unless-stopped
@@ -129,8 +127,7 @@ Container images are configured using parameters passed at runtime (such as thos
 
 | Parameter | Function |
 | :----: | --- |
-| `-p 7075/udp` | Nano communication port UDP |
-| `-p 7075/tcp` | Nano communication port TCP |
+| `-p 8075` | Nano communication port |
 | `-p 3000` | RPC interface filtered through a proxy |
 | `-p 3001` | Https RPC interface filtered through a proxy |
 | `-e PUID=1000` | for UserID - see below for explanation |
@@ -141,7 +138,7 @@ Container images are configured using parameters passed at runtime (such as thos
 | `-e LIVE_GENESIS_ACCOUNT=nano_xxxxxx` | Genesis block account |
 | `-e LIVE_GENESIS_WORK=WORK_FOR_BLOCK` | Genesis block proof of work |
 | `-e LIVE_GENESIS_SIG=BLOCK_SIGNATURE` | Genesis block signature |
-| `-e CLI_OPTIONS='--config node.receive_minimum = "1000000000000000000000000"'` | Node run command cli args |
+| `-e CLI_OPTIONS=--config node.enable_voting=true` | Node run command cli args |
 | `-e LMDB_BOOTSTRAP_URL=http://example.com/Nano_64_version_20.7z` | HTTP/HTTPS endpoint to download a 7z file with the data.ldb to bootstrap to this node |
 | `-v /config` | Main storage for config and blockchain |
 
@@ -204,7 +201,6 @@ These environment variables will be used for all of the peers in your payment ne
 By default this container will enable RPC control and publish a custom service that acts as an RPC firewall giving you the ability to whitelist specific RPC calls and overide/add default values.
 
 The default proxy config is stored in `/config/rpc-proxy.json`: 
-
 ```
 {
   "port":3000,
@@ -230,9 +226,7 @@ The default proxy config is stored in `/config/rpc-proxy.json`:
   }
 }
 ```
-
 This should be a minimal amount of RPC access needed to run a local light wallet against this endpoint. If you plan on having your network users only run clientside light wallets (local blake2b block generation and block `process` call publishing) you should publically publish this port for access for both port 7076 and 7077. For functional light wallets on Https endpoints we will generate a self signed cert/key combo but you should add the ones associated with your domain. This will allow yours and other https hosted light wallets to hit your RPC endpoint clientside from the users web browser.
-
 Outside of potential https tunneling and actual object parsing (will remove duplicate keys) this is not a conventional API, it simply acts as a firewall and will send and return data just like a local RPC server would. The goal is to be compatible with any existing Nano software if the developers decide to add the ability to connect to alternative network endpoints. 
 
 **Our Proxy has not been audited by any security team and is provided as is, though we make the best effort to keep it simple and secure**
@@ -244,45 +238,47 @@ We will pass the `CLI_OPTIONS` to the node, here is a run command example:
 
 ```
 -e CLI_OPTIONS='--config node.preconfigured_peers=["peering.yourhost.com","peering.yourhost2.com"] \
-                --config node.receive_minimum = "1000000000000000000000000"\
                 --config node.enable_voting=true'
 ```
 
 There are many options to know here to run an actual live node especially peering and voting, again please review the docs if you plan to run something outside of a local setup.
 
 ### Quickstart Guide
-If you just want to see some numbers on a screen you can run a couple local nodes capable of having our light wallet pointed to. In this example we will be running the containers ephemerally and using a minimum two node setup. You can technically run with a single node, but in any network you should never publish the RPC port (even firewalled through our proxy) of the voting representative that has a wallet unlocked on disk. 
 
-First run the principle node:
+Here we are going to cover the bare minimum commands needed to spinup a local payment network and wallet. 
 
+First spinup your containers:
 ```
-docker run --rm -it \
- -e CLI_OPTIONS='--config node.enable_voting=true' \
- -p 7075:7075/udp \
- -p 7075:7075/tcp \
- linuxserver/nano bash
+docker run -d \
+--name node \
+-e CLI_OPTIONS='--config node.enable_voting=true' \
+-p 7076:3000 \
+--restart unless-stopped \
+linuxserver/nano
 ```
-
-Then run a local peer to connect up to it acting as an RPC proxy:
-
 ```
-docker run --rm -it \
- -p 7076:3000 \
- -p 7077:3001 \
- -e PEER_HOST=REPLACE_WITH_LOCAL_IP \
- linuxserver/nano bash
+docker run -d \
+--name=wallet \
+-p 80:80 \
+--restart unless-stopped \
+linuxserver/nano-wallet
 ```
-
-Once both are up and running send some wallet RPC commands inside the voting principle node to unlock the Genesis wallet:
-
+Then unlock the Genesis funds on the local node to allow it to confirm transactions: 
 ```
-curl -d '{ "action": "wallet_create" }' localhost:7076
-curl -d '{ "action": "wallet_add", "wallet": "REPLACE_WITH_WALLET_ID", "key": "0000000000000000000000000000000000000000000000000000000000000000" }' localhost:7076
+docker exec -it node bash
+root@f1df092971f0:/# curl -d '{ "action": "wallet_create" }' localhost:7076
+{
+    "wallet": "A3D63F1B28AC68BCD9E0FF74278C7984A36841C803EF1A81DF92BCD6E3BB18F9"
+}
+root@f1df092971f0:/# curl -d '{ "action": "wallet_add", "wallet": "A3D63F1B28AC68BCD9E0FF74278C7984A36841C803EF1A81DF92BCD6E3BB18F9", "key": "0000000000000000000000000000000000000000000000000000000000000000" }' localhost:7076
+{
+    "account": "nano_18gmu6engqhgtjnppqam181o5nfhj4sdtgyhy36dan3jr9spt84rzwmktafc"
+}
 ```
+Here we are using the default private key of `0000000000000000000000000000000000000000000000000000000000000000` for the image.
+Navigate to http://localhost/#/localhost and enter this key. You should be greeted by the genesis account wallet with 340.28 Million Nano.
 
-You can now use the default private key `0000000000000000000000000000000000000000000000000000000000000000` in the web wallet to manage the genesis funds. By acessing the hosted live wallet http://wallet.linuxserver.io/ or run a simple nginx container located [here](https://github.com/linuxserver/docker-nano-wallet) to host a wallet locally.
-
-By default you will be running an insecure centralized network with a single voting representative and a zero security private key using the commands above. To spinup a standard private or even public network you should read up on Nano's documentation [HERE](https://docs.nano.org/) and continue reading the network design section below. 
+From here you can generate new wallets from the home screen and send/receive funds on your local network. Now you will be running an insecure centralized network with a single voting representative and a zero security private key using the commands above. To spinup a standard private or even public network you should read up on Nano's documentation [HERE](https://docs.nano.org/) and continue reading the network design section below.
 
 ### Network design
 There are 4 main concepts to grasp from a network standpoint as far as types of endpoints. Before we get started here is a basic network diagram:
@@ -303,7 +299,6 @@ In most deployments the best bet is to heavily centralize your voting nodes, thi
 To a normal user simply transacting on the network using off the shelf tools like a web wallet and web based block explorers is generally all that is required. They get a number in a ledger somewhere and are able to locally sign and publish blocks using their private key using your published RPC endpoints.
 
 For advanced users and just to generally make the network more robust, network operators should promote people running their own nodes. Using this image a network peer simply needs to run a docker run command with your pre-configured variables. IE given the generation example from above in the `Your Genesis account` section:
-
 ```
 docker create \
   --name=nano \
@@ -315,15 +310,13 @@ docker create \
   -e LIVE_GENESIS_ACCOUNT=nano_1da7hqsgp4hb55bzkptzsbntdzbyni5gyzar41a88b8fhcezoasfjkgmyk5y \
   -e LIVE_GENESIS_WORK=7fd88e48684600b7 \
   -e LIVE_GENESIS_SIG=D1DF3A64BB43C131944401632215569A40AAE858ACF6CB59D5C77070E69DBF6435D93807877628A8B142DBF1AC4C562CD2F4CEBEB7D15486BDB7494A6146E007 \
-  -p 7075:7075/udp \
-  -p 7075:7075/tcp \
+  -p 8075:8075 \
   -p 7076:3000 \
   -p 7077:3001 \
   -v /path/to/data:/config \
   --restart unless-stopped \
   linuxserver/nano
 ```
-
 When the container spins up it will reach out to the node to bootstrap it's local ledger from peering.mydomain.com . This node once fully synced will be able to run local RPC commands to plug into a wallet and default Nano node wallet commands for automated pocketing of transactions etc. It will also get a list of other peers on the network from it's initial network peering and start participating in your distributed cryptocurrency network.
 
 #### Public RPC endpoints
@@ -338,7 +331,6 @@ https://github.com/linuxserver/nano-wallet
 
 It is designed to be run 100% clientside in any web browser and use public RPC endpoints to hook into any network and conduct transactions by locally signing then publishing the result.
 This can be hosted locally with any simple webserver and pointed to a locally run peer, but for full functionality we reccomend providing a public Https URL with these files along with plugging in legitamite SSL certificates into your RPC endpoints running on 7077.
-
 # Running a node on the LinuxServer network
 
 We maintain our own network which users can get funds to transact on from our [Discord](https://discord.gg/YWrKVTn) server. If you would like to run a node on our network here is our Docker run command:
@@ -353,8 +345,7 @@ docker create \
   -e LIVE_GENESIS_ACCOUNT=nano_1yhkw7ducsmz5k7pskufytaxoi3kq3gyrgh489bbkxpwxn4zdefyn4rmrrkk \
   -e LIVE_GENESIS_WORK=c51204c6b69384cb \
   -e LIVE_GENESIS_SIG=90DDE7B4DC038811180FF5DDE8594F1774542A7AADE3DB71A57AA38A5AED42672E1E8D7ACFAC315BDB0EB5DCB542C610B9C49B2560AE575073855259AF065509 \
-  -p 7075:7075/udp \
-  -p 7075:7075/tcp \
+  -p 8075:8075 \
   -p 7076:3000 \
   -p 7077:3001 \
   -v /path/to/data:/config \
