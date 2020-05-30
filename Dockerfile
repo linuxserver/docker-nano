@@ -2,7 +2,7 @@
 FROM lsiobase/alpine:3.11 as builder
 
 ARG NANO_RELEASE
-ARG THREADS=2
+ARG THREADS=8
 
 SHELL ["/bin/bash", "-c"]
 RUN \
@@ -43,6 +43,9 @@ RUN \
 	-e 's/peering-beta.nano.org/localhost/g' \
 	-e 's/peering.nano.org/localhost/g' \
 	/tmp/src/nano/node/nodeconfig.cpp && \
+ sed -i \
+	's/7075/8075/g' \
+	/tmp/src/nano/lib/config.hpp && \
  echo "" > /tmp/src/rep_weights_live.bin && \
  echo "" > /tmp/src/rep_weights_beta.bin && \
  cd /tmp/build && \
