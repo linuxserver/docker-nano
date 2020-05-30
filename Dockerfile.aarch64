@@ -31,5 +31,5 @@ COPY --from=binstage / /
 COPY /root /
 
 # ports and volumes
-EXPOSE 7075/udp 7075/tcp 7076 7077
+EXPOSE 8075 7076 7077
 VOLUME /config
