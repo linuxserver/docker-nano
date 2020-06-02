@@ -1,5 +1,5 @@
 FROM lsiodev/nano-stable:arm64v8-latest as binstage
-FROM lsiobase/alpine:arm64v8-3.11
+FROM lsiobase/alpine:arm64v8-3.12
 
 # set version label
 ARG BUILD_DATE

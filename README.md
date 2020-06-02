@@ -431,5 +431,6 @@ Once registered you can define the dockerfile to use with `-f Dockerfile.aarch64
 
 ## Versions
 
+* **02.06.20:** - Rebase to Alpine 3.12.
 * **28.05.20:** - Add beta tag.
 * **17.05.20:** - Initial Release.
