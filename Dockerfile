@@ -2,7 +2,7 @@
 FROM lsiobase/alpine:3.12 as builder
 
 ARG NANO_RELEASE
-ARG THREADS=8
+ARG THREADS=2
 
 SHELL ["/bin/bash", "-c"]
 RUN \
