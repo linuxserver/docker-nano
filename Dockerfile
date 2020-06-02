@@ -1,5 +1,5 @@
 # buildtime stage
-FROM lsiobase/alpine:3.11 as builder
+FROM lsiobase/alpine:3.12 as builder
 
 ARG NANO_RELEASE
 ARG THREADS=2
