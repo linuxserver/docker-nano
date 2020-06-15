@@ -212,6 +212,7 @@ The default proxy config is stored in `/config/rpc-proxy.json`:
   "whitelist":[
     "account_info",
     "account_history",
+    "block_count",
     "block_info",
     "pending",
     "process"
