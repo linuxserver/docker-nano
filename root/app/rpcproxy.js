@@ -22,6 +22,7 @@ https.createServer({key:privateKey,cert:certificate}, (req,res) => {
 function rpcproxy(req,res) {
   var body = '';
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
   req.on('data', function (data) {
     body += data;
     // Only take 1000 bytes should cover all payloads and protect overflows 
