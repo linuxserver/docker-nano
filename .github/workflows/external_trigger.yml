@@ -18,13 +18,14 @@ jobs:
           fi
           echo "**** External trigger running off of beta branch. To disable this trigger, set a Github secret named \"PAUSE_EXTERNAL_TRIGGER_NANO_BETA\". ****"
           echo "**** Retrieving external version ****"
-          EXT_RELEASE=$(curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-beta/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1
+          EXT_RELEASE=$(curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-beta/tags' |jq -r '.results[].name' |grep -Po "V\d+\d+.*" | awk -F '-ls' '{print $1}' | head -n1
 )
           if [ -z "${EXT_RELEASE}" ] || [ "${EXT_RELEASE}" == "null" ]; then
             echo "**** Can't retrieve external version, exiting ****"
             FAILURE_REASON="Can't retrieve external version for nano branch beta"
+            GHA_TRIGGER_URL="https://github.com/linuxserver/docker-nano/actions/runs/${{ github.run_id }}"
             curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://cdn.discordapp.com/avatars/354986384542662657/df91181b3f1cf0ef1592fbe18e0962d7.png","embeds": [{"color": 16711680,
-              "description": "**Trigger Failed** \n**Reason:** '"${FAILURE_REASON}"' \n"}],
+              "description": "**Trigger Failed** \n**Reason:** '"${FAILURE_REASON}"' \n**Trigger URL:** '"${GHA_TRIGGER_URL}"' \n"}],
               "username": "Github Actions"}' ${{ secrets.DISCORD_WEBHOOK }}
             exit 1
           fi
