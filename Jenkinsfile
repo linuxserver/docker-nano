@@ -104,8 +104,7 @@ pipeline {
       steps{
         script{
           env.EXT_RELEASE = sh(
-            script: ''' curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-stable/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1
- ''',
+            script: ''' curl -sL 'https://hub.docker.com/v2/repositories/lsiodev/nano-stable/tags' |jq -r '.results[].name' |grep -Po "V\\d+\\d+.*" | awk -F '-ls' '{print $1}' | head -n1 ''',
             returnStdout: true).trim()
             env.RELEASE_LINK = 'custom_command'
         }
@@ -346,7 +345,7 @@ pipeline {
                 if grep -wq "${CONTAINER_NAME}" ${TEMPDIR}/unraid/templates/unraid/ignore.list; then
                   echo "Image is on the ignore list, marking Unraid template as deprecated"
                   cp ${TEMPDIR}/docker-${CONTAINER_NAME}/.jenkins-external/${CONTAINER_NAME}.xml ${TEMPDIR}/unraid/templates/unraid/
-                  git add unraid/${CONTAINER_NAME}.xml
+                  git add -u unraid/${CONTAINER_NAME}.xml
                   git mv unraid/${CONTAINER_NAME}.xml unraid/deprecated/${CONTAINER_NAME}.xml || :
                   git commit -m 'Bot Moving Deprecated Unraid Template' || :
                 else
